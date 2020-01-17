@@ -9,20 +9,35 @@
 	; ******* Programme FLASH read Setup Code ****  
 setup	bcf	EECON1, CFGS	; point to Flash program memory  
 	bsf	EECON1, EEPGD 	; access Flash program memory
+	constant myarray = 0x400 
+	constant counter = 0x10
+	constant number = 0x50
+	constant myread = 0x500
+	;constant
 	goto	start
 	; ******* My data and where to put it in RAM *
 	
-start	lfsr	FSR0, 0x400	; Load FSR0 with address in RAM	
-	movlw	0xff		; 22 bytes to read
-	movwf 	0x10		; our counter register
+start	lfsr	FSR0, myarray	; Load FSR0 with address in RAM	
+	lfsr	FSR1, myread
 	movlw	0x00
-	movwf	0x50
+	movwf	TRISC, ACCESS
+	movlw	0xf1		; 22 bytes to read
+	movwf 	counter		; our counter register
+	movlw	0x00
+	movwf	number
 
-loop	movff	0x50, POSTINC0
-	incf	0x50, f
-	decfsz	0x10		; count down to zero
+loop	movff	number, INDF0
+	movff	INDF0, INDF1
+	movf	POSTINC0, w
+	cpfseq	POSTINC1, ACCESS
+	call	wrong
+	incf	number, f
+	decfsz	counter		; count down to zero
 	bra	loop		; keep going until finished
 	
 	goto	0
-
+wrong	movff	0x06, PORTC
+	movlw	0x05
+	movwf	0x06, ACCESS
+	return
 	end
